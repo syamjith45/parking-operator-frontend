@@ -1,0 +1,32 @@
+# VPS Deployment Implementation Plan
+
+The project is generally well-structured, but requires a few key adjustments to ensure it runs securely and reliably on a production VPS server.
+
+## Findings & Potential Issues
+1. **Missing CORS Configuration:** The [server.js](file:///c:/parking-operator/parking-operator-api/src/server.js) file does not configure Cross-Origin Resource Sharing (CORS). When deployed to a VPS, the frontend (hosted elsewhere or on a different domain/port) will be blocked by browsers from making requests to the API.
+2. **Hardcoded Placeholder URLs:** In [src/config/database.js](file:///c:/parking-operator/parking-operator-api/src/config/database.js), if Supabase credentials are missing, it falls back to a placeholder URL. In production, this should ideally fail fast rather than failing silently or causing unexpected behavior.
+3. **Environment Variables:** The [Dockerfile](file:///c:/parking-operator/parking-operator-api/Dockerfile) explicitly ignores `.env` (which is good), but the production deployment needs a secure way to inject these variables.
+4. **Process Management:** Running `npm start` directly in the container is fine, but using a process manager or explicit Node invocation is often preferred. 
+
+## Proposed Changes
+
+### 1. Backend Configuration
+#### [MODIFY] [package.json](file:///c:/parking-operator/parking-operator-api/package.json)
+- Add `cors` to dependencies.
+
+#### [MODIFY] [src/server.js](file:///c:/parking-operator/parking-operator-api/src/server.js)
+- Import and configure the `cors` middleware to allow requests from the frontend domain (or all domains initially for easier setup, though restricting is safer).
+
+### 2. Deployment Setup (Optional but Recommended)
+#### [NEW] `docker-compose.yml`
+- Create a Docker Compose file to easily manage the container, network, restart policies (e.g., `restart: always`), and environment variable injection on the VPS.
+
+## Verification Plan
+
+### Automated Tests
+- Run `docker build -t parking-operator-api .` to ensure the image still builds successfully with the new `cors` dependency.
+
+### Manual Verification
+1. **Local Test:** Run the container locally using `docker-compose up` or `docker run` and verify the `/health` endpoint is accessible.
+2. **Frontend Test:** Ensure the frontend can successfully make a request (e.g., login or fetch data) to the running container without encountering a CORS error.
+3. **VPS Deployment (User Action):** The user will copy the code to the VPS, create the `.env` file, and run `docker-compose up -d`.

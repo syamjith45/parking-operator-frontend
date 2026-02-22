@@ -1,5 +1,5 @@
 import { Logo } from "../ui/Logo"
-import { SettingsModal } from "../dashboard/SettingsModal"
+
 import React, { useState } from "react"
 import { LayoutDashboard, Plus, BarChart3, Settings, User, History, Moon, Sun, LogOut } from "lucide-react"
 import { cn } from "../../lib/utils"
@@ -49,7 +49,7 @@ export const MobileLayout = ({ children, activeTab, onTabChange, onLogout }) => 
                 </div>
             </header>
 
-            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
 
             {/* Main Content Area */}
             <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 relative z-10 bg-stone-50 dark:bg-slate-950 scrollbar-hide transition-colors duration-300">

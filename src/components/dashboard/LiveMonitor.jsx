@@ -1,15 +1,68 @@
 import React, { useState } from 'react'
-import { useParking } from '../../context/ParkingContext'
 import { ExitModal } from './ExitModal'
 import { Car, Bike, Search, Clock, ArrowRight } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { gql } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
+
+// Query to get active vehicles and pricing rules
+const GET_MONITOR_DATA = gql`
+  query GetMonitorData {
+    activeVehicles {
+      id
+      session_id
+      driver_phone
+      vehicle_type
+      vehicle_number
+      entry_time
+      status
+      base_fee_paid
+      duration_minutes
+      is_overstay
+      overstay_minutes
+    }
+    pricingRules {
+      id
+      vehicle_type
+      base_fee
+      base_hours
+      extra_hour_rate
+    }
+  }
+`;
+
+const PROCESS_EXIT = gql`
+  mutation ProcessExit($sessionId: String!) {
+    processVehicleExit(session_id: $sessionId) {
+      session_id
+      total_amount
+      overstay_fee
+      overstay_record {
+        id
+        fee_amount
+      }
+    }
+  }
+`;
+
+const COLLECT_PAYMENT = gql`
+  mutation CollectPayment($chargeId: ID!) {
+     collectOverstayPayment(overstay_charge_id: $chargeId) {
+       id
+       is_collected
+     }
+  }
+`;
 
 // --- COMPONENT: Mobile Card (Light Mode) ---
-const VehicleCard = ({ vehicle, onExit }) => {
+const VehicleCard = ({ vehicle, onExit, baseHours }) => {
     const now = new Date();
-    const entry = new Date(vehicle.entryTime);
-    const elapsedHrs = (now - entry) / 3600000;
-    const isOverstaying = elapsedHrs > vehicle.declaredDuration;
+    const entry = new Date(vehicle.entry_time);
+    // Use backend duration if available, else calculate
+    const elapsedHrs = vehicle.duration_minutes ? vehicle.duration_minutes / 60 : (now - entry) / 3600000;
+
+    // Use backend is_overstay flag
+    const isOverstaying = vehicle.is_overstay;
 
     return (
         <div
@@ -23,14 +76,14 @@ const VehicleCard = ({ vehicle, onExit }) => {
                 <div className="flex items-center gap-4">
                     <div className={cn(
                         "h-12 w-12 rounded-2xl flex items-center justify-center border border-stone-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none",
-                        vehicle.type === '4W' ? "text-brand-blue" : "text-stone-500 dark:text-slate-400"
+                        vehicle.vehicle_type === 'car' ? "text-brand-blue" : "text-stone-500 dark:text-slate-400"
                     )}>
-                        {vehicle.type === '4W' ? <Car className="h-6 w-6" /> : <Bike className="h-6 w-6" />}
+                        {vehicle.vehicle_type === 'car' ? <Car className="h-6 w-6" /> : <Bike className="h-6 w-6" />}
                     </div>
                     <div>
-                        <div className="text-xl font-bold text-slate-900 dark:text-white tracking-tight font-mono">{vehicle.numberPlate || 'NO PLATE'}</div>
+                        <div className="text-xl font-bold text-slate-900 dark:text-white tracking-tight font-mono">{vehicle.vehicle_number || 'NO PLATE'}</div>
                         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            <span>{vehicle.phone}</span>
+                            <span>{vehicle.driver_phone}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
                             <span>In: {entry.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
@@ -49,7 +102,7 @@ const VehicleCard = ({ vehicle, onExit }) => {
                     isOverstaying ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"
                 )}>
                     <Clock className="h-4 w-4" />
-                    <span>{elapsedHrs.toFixed(1)} <span className="text-slate-300 dark:text-slate-600 font-normal">/</span> {vehicle.declaredDuration}h</span>
+                    <span>{elapsedHrs.toFixed(1)} <span className="text-slate-300 dark:text-slate-600 font-normal">/</span> {baseHours}h</span>
                 </div>
                 <button className="h-10 w-10 flex items-center justify-center rounded-full bg-stone-50 dark:bg-slate-800 text-stone-400 dark:text-slate-500 active:bg-brand-blue active:text-white active:scale-90 transition-all duration-200 shadow-sm dark:shadow-none">
                     <ArrowRight className="h-5 w-5" />
@@ -61,29 +114,83 @@ const VehicleCard = ({ vehicle, onExit }) => {
 
 // --- MAIN COMPONENT ---
 export const LiveMonitor = () => {
-    const { vehicles, checkoutVehicle, completeExit } = useParking()
+    const { data, loading, error, refetch } = useQuery(GET_MONITOR_DATA, { pollInterval: 30000, fetchPolicy: 'cache-and-network' });
+    const [processExit] = useMutation(PROCESS_EXIT);
+    const [collectPayment] = useMutation(COLLECT_PAYMENT);
+
     const [searchTerm, setSearchTerm] = useState('')
     const [exitModalCtx, setExitModalCtx] = useState(null)
 
-    const activeVehicles = vehicles
-        .filter(v => v.status === 'ACTIVE')
-        .filter(v =>
-            v.phone.includes(searchTerm) ||
-            (v.numberPlate && v.numberPlate.includes(searchTerm.toUpperCase()))
-        )
-        .sort((a, b) => new Date(a.entryTime) - new Date(b.entryTime))
+    // Filter active vehicles based on search
+    const activeVehicles = data?.activeVehicles
+        ? data.activeVehicles
+            .filter(v =>
+                v.driver_phone.includes(searchTerm) ||
+                (v.vehicle_number && v.vehicle_number.includes(searchTerm.toUpperCase()))
+            )
+            .sort((a, b) => new Date(a.entry_time) - new Date(b.entry_time))
+        : [];
+
+    const getPricingRule = (type) => {
+        return data?.pricingRules?.find(r => r.vehicle_type.toLowerCase() === type.toLowerCase());
+    }
 
     const handleExitClick = (vehicle) => {
-        const data = checkoutVehicle(vehicle.id)
-        setExitModalCtx({ vehicle, exitData: data })
+        const rule = getPricingRule(vehicle.vehicle_type);
+        if (!rule) {
+            console.error("No pricing rule found for", vehicle.vehicle_type);
+            return;
+        }
+
+        const now = new Date();
+        const entry = new Date(vehicle.entry_time);
+        const durationHours = (now - entry) / (1000 * 60 * 60);
+        const actualDuration = Math.ceil(durationHours);
+
+        const baseHours = rule.base_hours;
+        const overstayHours = Math.max(0, actualDuration - baseHours);
+
+        // Calculate costs (Mock logic matching backend simply for preview)
+        // Rate: Base Fee + (Overstay Hours * Extra Rate)
+        const baseFee = rule.base_fee; // Already paid
+        const overstayFee = overstayHours * rule.extra_hour_rate;
+        const totalCost = baseFee + overstayFee;
+        const balanceDue = overstayFee; // Assuming base fee is paid upfront
+
+        const exitData = {
+            actualDuration,
+            overstayHours,
+            totalCost,
+            balanceDue,
+            declaredDuration: baseHours // Using base hours as declared duration
+        };
+
+        setExitModalCtx({ vehicle, exitData, rule });
     }
 
-    const handleConfirmExit = () => {
-        if (exitModalCtx) {
-            completeExit(exitModalCtx.vehicle.id, exitModalCtx.exitData.totalDue, exitModalCtx.exitData)
-            setExitModalCtx(null)
+    const handleConfirmExit = async () => {
+        if (!exitModalCtx) return;
+
+        try {
+            const result = await processExit({ variables: { sessionId: exitModalCtx.vehicle.session_id } });
+            const exitResult = result.data.processVehicleExit;
+
+            // If there is an overstay fee and we are "Collecting & Exiting"
+            if (exitResult.overstay_fee > 0 && exitResult.overstay_record) {
+                await collectPayment({ variables: { chargeId: exitResult.overstay_record.id } });
+            }
+
+            // Refresh list
+            refetch();
+            setExitModalCtx(null);
+        } catch (e) {
+            console.error("Exit processing failed", e);
+            alert("Failed to process exit: " + e.message);
         }
     }
+
+    if (loading) return <div className="p-8 text-center text-slate-500">Loading active sessions...</div>;
+    if (error) return <div className="p-8 text-center text-rose-500">Error loading data: {error.message}</div>;
 
     return (
         <div className="flex flex-col h-full">
@@ -114,9 +221,17 @@ export const LiveMonitor = () => {
                         <p className="font-medium">No active vehicles</p>
                     </div>
                 ) : (
-                    activeVehicles.map(v => (
-                        <VehicleCard key={v.id} vehicle={v} onExit={handleExitClick} />
-                    ))
+                    activeVehicles.map(v => {
+                        const rule = getPricingRule(v.vehicle_type);
+                        return (
+                            <VehicleCard
+                                key={v.id}
+                                vehicle={v}
+                                onExit={handleExitClick}
+                                baseHours={rule ? rule.base_hours : 2}
+                            />
+                        );
+                    })
                 )}
             </div>
 

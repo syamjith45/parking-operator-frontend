@@ -4,26 +4,32 @@ import { Lock, User, AlertCircle } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Logo } from '../ui/Logo'
+import { useAuth } from '../../context/AuthContext'
 
-export const LoginPage = ({ onLogin }) => {
-    const [username, setUsername] = useState('')
+export const LoginPage = () => {
+    const { login } = useAuth()
+    const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
-    const [isLoading, setIsLoading] = useState(false)
+    const [loading, setLoading] = useState(false)
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
-        setIsLoading(true)
 
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800))
+        if (!email || !password) {
+            setError('Please enter email and password');
+            return;
+        }
 
-        if (username === 'admin' && password === 'admin') {
-            onLogin()
-        } else {
-            setError('Invalid credentials')
-            setIsLoading(false)
+        setLoading(true);
+        try {
+            await login(email, password);
+        } catch (e) {
+            console.error("Login error", e);
+            setError(e.message || 'Login failed');
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -55,10 +61,10 @@ export const LoginPage = ({ onLogin }) => {
                             <div className="relative">
                                 <User className="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500 transition-colors duration-300" />
                                 <Input
-                                    type="text"
-                                    placeholder="Username"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
+                                    type="email"
+                                    placeholder="Email Address"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     className="pl-10 bg-white dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus-visible:ring-brand-blue/50 transition-colors duration-300"
                                 />
                             </div>
@@ -88,7 +94,7 @@ export const LoginPage = ({ onLogin }) => {
                         <Button
                             type="submit"
                             className="w-full bg-brand-blue hover:bg-cyan-600 text-white shadow-lg shadow-brand-blue/20 h-11"
-                            isLoading={isLoading}
+                            isLoading={loading}
                         >
                             Sign In
                         </Button>

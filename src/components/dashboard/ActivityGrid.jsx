@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react'
 import { BentoCard } from './BentoCard'
-import { Activity, IndianRupee, Car, Warehouse, AlertCircle, Timer, TrendingUp } from 'lucide-react'
-import { useParking } from '../../context/ParkingContext'
+import { Activity, Car, Warehouse, Timer, TrendingUp } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const RevenueChart = ({ total }) => (
@@ -29,7 +28,7 @@ const RevenueChart = ({ total }) => (
         </svg>
         <div className="absolute top-0 left-0">
             <div className="text-3xl font-bold text-slate-900 dark:text-slate-50 tracking-tight flex items-baseline transition-colors">
-                <span className="text-lg mr-1 text-slate-500 dark:text-slate-400">₹</span>{total.toLocaleString()}
+                <span className="text-lg mr-1 text-slate-500 dark:text-slate-400">₹</span>{total}
             </div>
             <div className="flex items-center gap-1 mt-1">
                 <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 transition-colors">
@@ -44,12 +43,13 @@ const RevenueChart = ({ total }) => (
 const VehicleTypes = ({ vehicles }) => {
     const counts = useMemo(() => {
         return vehicles.reduce((acc, v) => {
-            acc[v.type] = (acc[v.type] || 0) + 1;
+            const typeKey = v.vehicle_type === 'bike' ? '2W' : (v.vehicle_type === 'car' ? '4W' : v.vehicle_type);
+            acc[typeKey] = (acc[typeKey] || 0) + 1;
             return acc;
         }, { '2W': 0, '4W': 0 });
     }, [vehicles]);
 
-    const maxVal = Math.max(counts['2W'], counts['4W'], 1);
+    const maxVal = Math.max(counts['2W'] || 0, counts['4W'] || 0, 1);
 
     if (vehicles.length === 0) {
         return (
@@ -67,32 +67,32 @@ const VehicleTypes = ({ vehicles }) => {
                 <div className="flex flex-col items-center gap-2 group w-full">
                     <div className="relative w-10 bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden flex items-end transition-colors">
                         <div
-                            style={{ height: `${(counts['2W'] / maxVal) * 100}%`, minHeight: '4px' }}
+                            style={{ height: `${((counts['2W'] || 0) / maxVal) * 100}%`, minHeight: '4px' }}
                             className={cn(
                                 "w-full rounded-t-lg transition-all duration-500",
-                                counts['2W'] > 0 ? "bg-slate-800 dark:bg-slate-600" : "bg-transparent"
+                                (counts['2W'] || 0) > 0 ? "bg-slate-800 dark:bg-slate-600" : "bg-transparent"
                             )}
                         ></div>
                     </div>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 transition-colors">2W</span>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 transition-colors">2W (Bike)</span>
                 </div>
 
                 {/* 4W Bar */}
                 <div className="flex flex-col items-center gap-2 group w-full">
                     <div className="relative w-10 bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden flex items-end transition-colors">
                         <div
-                            style={{ height: `${(counts['4W'] / maxVal) * 100}%`, minHeight: '4px' }}
+                            style={{ height: `${((counts['4W'] || 0) / maxVal) * 100}%`, minHeight: '4px' }}
                             className={cn(
                                 "w-full rounded-t-lg transition-all duration-500",
-                                counts['4W'] > 0 ? "bg-slate-600 dark:bg-slate-400" : "bg-transparent"
+                                (counts['4W'] || 0) > 0 ? "bg-slate-600 dark:bg-slate-400" : "bg-transparent"
                             )}
                         ></div>
                     </div>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 transition-colors">4W</span>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 transition-colors">4W (Car)</span>
                 </div>
             </div>
             <div className="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400 px-2 transition-colors">
-                <div>Total: {vehicles.length}</div>
+                <div>Total Active: {vehicles.length}</div>
                 <div>Capacity: 50</div>
             </div>
         </div>
@@ -102,7 +102,7 @@ const VehicleTypes = ({ vehicles }) => {
 const OverstayStats = ({ count, revenue }) => (
     <div className="flex items-center justify-between p-2 mt-2">
         <div className="flex flex-col">
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 transition-colors">Total Overstays</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 transition-colors">Active Overstays</span>
             <div className="flex items-baseline gap-1">
                 <span className={cn("text-3xl font-bold font-mono transition-colors", count > 0 ? "text-rose-600 dark:text-rose-500" : "text-slate-900 dark:text-slate-200")}>
                     {count}
@@ -118,7 +118,7 @@ const OverstayStats = ({ count, revenue }) => (
             <div className="flex items-baseline gap-1">
                 <span className="text-sm font-medium text-slate-400 dark:text-slate-600 transition-colors">₹</span>
                 <span className="text-3xl font-bold font-mono text-emerald-600 dark:text-emerald-500 transition-colors">
-                    {revenue.toLocaleString()}
+                    {revenue}
                 </span>
             </div>
         </div>
@@ -151,15 +151,21 @@ const OccupancyRing = ({ current, total = 50 }) => {
     )
 }
 
-export const ActivityGrid = () => {
-    const { stats, vehicles, history } = useParking();
+export const ActivityGrid = ({ dashboardStats, activeVehicles }) => {
+    // Map stats to UI
+    const totalRevenue = dashboardStats?.total_revenue_today || "0.00";
+    const activeCount = dashboardStats?.active_vehicles || 0;
+    const overstayRevenue = dashboardStats?.overstay_fees_collected || "0.00";
+
+    // Calculate active overstay count from vehicle list
+    const overstayCount = activeVehicles ? activeVehicles.filter(v => v.is_overstay).length : 0;
 
     return (
         <div className="p-1 grid grid-cols-2 gap-4 auto-rows-min">
 
             {/* Revenue - Large Card */}
             <BentoCard className="col-span-1 row-span-2" title="Revenue" icon={Activity}>
-                <RevenueChart total={stats.totalRevenue} />
+                <RevenueChart total={totalRevenue} />
             </BentoCard>
 
             {/* Occupancy & Active - Split Column */}
@@ -167,15 +173,15 @@ export const ActivityGrid = () => {
                 <BentoCard className="flex flex-row items-center justify-between !p-5">
                     <div>
                         <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest transition-colors">Occupancy</div>
-                        <div className="text-xl font-bold text-slate-900 dark:text-slate-200 mt-1 transition-colors">{stats.activeCount}/50</div>
+                        <div className="text-xl font-bold text-slate-900 dark:text-slate-200 mt-1 transition-colors">{activeCount}/50</div>
                     </div>
-                    <OccupancyRing current={stats.activeCount} />
+                    <OccupancyRing current={activeCount} />
                 </BentoCard>
 
                 <BentoCard className="flex flex-row items-center justify-between !p-5">
                     <div>
                         <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest transition-colors">Active</div>
-                        <div className="text-xl font-bold text-slate-900 dark:text-slate-200 mt-1 transition-colors">{stats.activeCount}</div>
+                        <div className="text-xl font-bold text-slate-900 dark:text-slate-200 mt-1 transition-colors">{activeCount}</div>
                     </div>
                     <div className="h-10 w-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center border border-slate-100 dark:border-slate-700 transition-colors">
                         <Car className="h-5 w-5 text-slate-700 dark:text-slate-400 transition-colors" />
@@ -184,13 +190,15 @@ export const ActivityGrid = () => {
             </div>
 
             {/* Vehicle Types - Full Width */}
-            <BentoCard className="col-span-2" title="Vehicle Distribution" icon={Warehouse}>
-                <VehicleTypes vehicles={[...vehicles, ...history]} />
+            <BentoCard className="col-span-2" title="Active Distribution" icon={Warehouse}>
+                {/* Note: Showing Active Vehicles distribution derived from list, as backend stats doesn't provide breakdown */}
+                <VehicleTypes vehicles={activeVehicles || []} />
             </BentoCard>
 
             {/* Overstays - Full Width */}
             <BentoCard className="col-span-2" title="Overstay Monitor" icon={Timer}>
-                <OverstayStats count={stats.overstayCount} revenue={stats.overstayRevenue || 0} />
+                {/* Note: Overstay count is Active Overstays. Revenue is Total Today. */}
+                <OverstayStats count={overstayCount} revenue={overstayRevenue} />
             </BentoCard>
 
         </div>
