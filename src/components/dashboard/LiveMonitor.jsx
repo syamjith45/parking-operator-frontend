@@ -20,6 +20,7 @@ const GET_MONITOR_DATA = gql`
       duration_minutes
       is_overstay
       overstay_minutes
+      declared_duration_hours
     }
     pricingRules {
       id
@@ -64,6 +65,8 @@ const VehicleCard = ({ vehicle, onExit, baseHours }) => {
     // Use backend is_overstay flag
     const isOverstaying = vehicle.is_overstay;
 
+    const effectiveBaseHours = vehicle.declared_duration_hours || baseHours;
+
     return (
         <div
             onClick={() => onExit(vehicle)}
@@ -102,7 +105,11 @@ const VehicleCard = ({ vehicle, onExit, baseHours }) => {
                     isOverstaying ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"
                 )}>
                     <Clock className="h-4 w-4" />
-                    <span>{elapsedHrs.toFixed(1)} <span className="text-slate-300 dark:text-slate-600 font-normal">/</span> {baseHours}h</span>
+                    <span>
+                        {elapsedHrs.toFixed(1)}
+                        <span className="text-slate-300 dark:text-slate-600 font-normal"> / </span>
+                        {effectiveBaseHours}h
+                    </span>
                 </div>
                 <button className="h-10 w-10 flex items-center justify-center rounded-full bg-stone-50 dark:bg-slate-800 text-stone-400 dark:text-slate-500 active:bg-brand-blue active:text-white active:scale-90 transition-all duration-200 shadow-sm dark:shadow-none">
                     <ArrowRight className="h-5 w-5" />
@@ -147,7 +154,10 @@ export const LiveMonitor = () => {
         const durationHours = (now - entry) / (1000 * 60 * 60);
         const actualDuration = Math.ceil(durationHours);
 
-        const baseHours = rule.base_hours;
+        const baseHours = Math.max(
+            rule.base_hours,
+            vehicle.declared_duration_hours || 0
+        );
         const overstayHours = Math.max(0, actualDuration - baseHours);
 
         // Calculate costs (Mock logic matching backend simply for preview)

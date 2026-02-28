@@ -28,16 +28,16 @@ export const ExitModal = ({ isOpen, onClose, onConfirm, vehicle, exitData }) => 
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 transition-colors">Vehicle Details</p>
-                        <p className="text-3xl font-mono font-bold text-slate-900 dark:text-white tracking-tight mb-1 transition-colors">{vehicle.numberPlate || 'NO PLATE'}</p>
+                        <p className="text-3xl font-mono font-bold text-slate-900 dark:text-white tracking-tight mb-1 transition-colors">{vehicle.vehicle_number || 'NO PLATE'}</p>
                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2 transition-colors">
-                            <span>Ph: {vehicle.phone}</span>
+                            <span>Ph: {vehicle.driver_phone}</span>
                         </p>
                     </div>
                     <div className={cn(
                         "px-3 py-1 rounded-full text-xs font-bold border transition-colors",
-                        vehicle.type === '4W' ? "bg-cyan-50 dark:bg-cyan-900/20 text-brand-blue dark:text-cyan-400 border-cyan-100 dark:border-cyan-800" : "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-800"
+                        vehicle.vehicle_type === 'car' ? "bg-cyan-50 dark:bg-cyan-900/20 text-brand-blue dark:text-cyan-400 border-cyan-100 dark:border-cyan-800" : "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-800"
                     )}>
-                        {vehicle.type === '4W' ? 'Car' : 'Bike'}
+                        {vehicle.vehicle_type === 'car' ? 'Car' : 'Bike'}
                     </div>
                 </div>
 
@@ -50,10 +50,10 @@ export const ExitModal = ({ isOpen, onClose, onConfirm, vehicle, exitData }) => 
                                 <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase transition-colors">Entry Time</span>
                             </div>
                             <p className="text-sm font-mono font-bold text-slate-900 dark:text-white transition-colors">
-                                {new Date(vehicle.entryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(vehicle.entry_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium transition-colors">
-                                {new Date(vehicle.entryTime).toLocaleDateString()}
+                                {new Date(vehicle.entry_time).toLocaleDateString()}
                             </p>
                         </div>
                         <div className="text-right">
@@ -73,7 +73,7 @@ export const ExitModal = ({ isOpen, onClose, onConfirm, vehicle, exitData }) => 
                     <div className="col-span-2 p-4 rounded-2xl bg-stone-50 dark:bg-slate-900 border border-stone-100 dark:border-slate-800 flex justify-between items-center transition-colors">
                         <div>
                             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 transition-colors">Total Duration</p>
-                            <p className="text-2xl font-bold text-slate-900 dark:text-white transition-colors">{exitData.actualDuration}h <span className="text-sm font-semibold text-slate-400 dark:text-slate-600">/ {vehicle.declaredDuration}h</span></p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white transition-colors">{exitData.actualDuration}h <span className="text-sm font-semibold text-slate-400 dark:text-slate-600">/ {exitData.declaredDuration}h</span></p>
                         </div>
                         <div className="text-right">
                             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 transition-colors">Total Cost</p>
@@ -86,7 +86,7 @@ export const ExitModal = ({ isOpen, onClose, onConfirm, vehicle, exitData }) => 
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4 transition-colors">
                     <div className="flex justify-between text-sm">
                         <span className="text-slate-500 dark:text-slate-400 transition-colors">Paid Upfront</span>
-                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-500 transition-colors">- ₹{vehicle.initialFee}</span>
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-500 transition-colors">- ₹{vehicle.base_fee_paid || 0}</span>
                     </div>
 
                     <div className="flex justify-between items-end">
