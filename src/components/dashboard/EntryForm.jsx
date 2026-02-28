@@ -43,10 +43,14 @@ export const EntryForm = ({ onComplete }) => {
 
     const computedFee = useMemo(() => {
         if (!selectedRule) return null;
-        if (!declaredHours || declaredHours <= selectedRule.base_hours) {
+
+        const hours = declaredHours || selectedRule.base_hours;
+
+        if (hours <= selectedRule.base_hours) {
             return selectedRule.base_fee;
         }
-        const extraHours = declaredHours - selectedRule.base_hours;
+
+        const extraHours = hours - selectedRule.base_hours;
         return selectedRule.base_fee + (extraHours * selectedRule.extra_hour_rate);
     }, [selectedRule, declaredHours]);
 

@@ -3,6 +3,7 @@ import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
 import { Search, Filter, ChevronLeft, ChevronRight, Car, Bike, FileText } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
 
 const GET_TRANSACTION_HISTORY = gql`
   query transactionHistory(
@@ -23,7 +24,7 @@ const GET_TRANSACTION_HISTORY = gql`
       end_date: $end_date
       search: $search
     ) {
-      transactions {
+      records {
         session_id
         vehicle_number
         vehicle_type
@@ -39,9 +40,11 @@ const GET_TRANSACTION_HISTORY = gql`
         created_by_staff {
           name
           role
+          email
         }
       }
       total_count
+      total_pages
       page
       page_size
     }
@@ -49,6 +52,7 @@ const GET_TRANSACTION_HISTORY = gql`
 `;
 
 export const HistoryPanel = () => {
+    const { user } = useAuth();
     const [page, setPage] = useState(1);
     const [pageSize] = useState(20);
     const [status, setStatus] = useState('');
@@ -92,9 +96,12 @@ export const HistoryPanel = () => {
         });
     };
 
-    const transactions = data?.transactionHistory?.transactions || [];
+    const rawRecords = data?.transactionHistory?.records || [];
+    const transactions = rawRecords.filter(tx => !user || !tx.created_by_staff?.email || tx.created_by_staff.email === user.email);
+
+    // Fallback totals since we are filtering locally
     const totalCount = data?.transactionHistory?.total_count || 0;
-    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const totalPages = data?.transactionHistory?.total_pages || Math.max(1, Math.ceil(totalCount / pageSize));
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
@@ -326,10 +333,10 @@ export const HistoryPanel = () => {
                 </div>
 
                 {/* Pagination Footer */}
-                {!loading && !error && totalCount > 0 && (
+                {!loading && !error && (transactions.length > 0) && (
                     <div className="shrink-0 border-t border-stone-200 dark:border-slate-800 bg-stone-50/50 dark:bg-slate-950/30 p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
                         <div className="text-slate-500 dark:text-slate-400 font-medium">
-                            Showing <span className="font-bold text-slate-900 dark:text-white">{(page - 1) * pageSize + 1}</span> to <span className="font-bold text-slate-900 dark:text-white">{Math.min(page * pageSize, totalCount)}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalCount}</span> entries
+                            Showing <span className="font-bold text-slate-900 dark:text-white">{(page - 1) * pageSize + 1}</span> to <span className="font-bold text-slate-900 dark:text-white">{Math.min(page * pageSize, totalCount || ((page - 1) * pageSize + transactions.length))}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalCount || 'many'}</span> entries
                         </div>
                         <div className="flex items-center gap-1">
                             <button
