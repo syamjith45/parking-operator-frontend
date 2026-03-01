@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useApolloClient } from '@apollo/client/react';
 import { supabase } from '../lib/supabase';
 
-// 🔧 DEV BYPASS: Set to false to re-enable real authentication
-const DEV_BYPASS = true;
+
+const DEV_BYPASS = false;
 
 const AuthContext = createContext(null);
 
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
     const client = useApolloClient();
 
     useEffect(() => {
-        if (DEV_BYPASS) return; // Skip Supabase calls in bypass mode
+        if (DEV_BYPASS) return;
 
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
