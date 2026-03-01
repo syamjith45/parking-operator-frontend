@@ -12,7 +12,7 @@ import { useAuth } from "./context/AuthContext"
 
 function App() {
   const { isAuthenticated, logout } = useAuth()
-  const [activeTab, setActiveTab] = useState('monitor') // monitor, add, stats, history, profile
+  const [activeTab, setActiveTab] = useState('monitor')
   const [showEntryForm, setShowEntryForm] = useState(false)
 
   const handleLogout = () => {
@@ -38,10 +38,13 @@ function App() {
           ) : (
             <>
               {showEntryForm ? (
-                <EntryForm onComplete={() => {
-                  setShowEntryForm(false)
-                  setActiveTab('monitor')
-                }} />
+                <EntryForm
+                  onComplete={() => {
+                    setShowEntryForm(false)
+                    setActiveTab('monitor')
+                  }}
+                  onCancel={() => setShowEntryForm(false)}
+                />
               ) : (
                 <MobileLayout activeTab={activeTab} onTabChange={handleTabChange} onLogout={handleLogout}>
                   <AnimatePresence mode="wait">
