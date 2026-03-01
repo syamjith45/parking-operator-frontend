@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Bike, Car, ArrowRight, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { Bike, Car, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { gql } from '@apollo/client';
 import { useQuery, useMutation } from '@apollo/client/react';
@@ -11,6 +11,7 @@ const GET_PRICING_RULES = gql`
       vehicle_type
       base_fee
       base_hours
+      extra_hour_rate
     }
   }
 `;
@@ -35,9 +36,23 @@ export const EntryForm = ({ onComplete, onCancel }) => {
     const [vehicleType, setVehicleType] = useState('car') // Default to car (matches backend lowercase)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+    const [declaredHours, setDeclaredHours] = useState(null) // null = use default
 
     // Get rule for selected type
     const selectedRule = data?.pricingRules?.find(r => r.vehicle_type.toLowerCase() === vehicleType.toLowerCase());
+
+    const computedFee = useMemo(() => {
+        if (!selectedRule) return null;
+
+        const hours = declaredHours || selectedRule.base_hours;
+
+        if (hours <= selectedRule.base_hours) {
+            return selectedRule.base_fee;
+        }
+
+        const extraHours = hours - selectedRule.base_hours;
+        return selectedRule.base_fee + (extraHours * selectedRule.extra_hour_rate);
+    }, [selectedRule, declaredHours]);
 
     const handleSubmit = async () => {
         if (!phoneNumber || phoneNumber.length < 10 || !numberPlate) return
@@ -50,7 +65,8 @@ export const EntryForm = ({ onComplete, onCancel }) => {
                     input: {
                         driver_phone: phoneNumber,
                         vehicle_number: numberPlate.toUpperCase(),
-                        vehicle_type: vehicleType
+                        vehicle_type: vehicleType,
+                        declared_duration_hours: declaredHours
                     }
                 },
                 refetchQueries: ['GetMonitorData', 'GetStatsData'],
@@ -64,6 +80,7 @@ export const EntryForm = ({ onComplete, onCancel }) => {
 
             setPhoneNumber('')
             setNumberPlate('')
+            setDeclaredHours(null)
         } catch (e) {
             console.error("Entry error", e);
             setError(e.message || "Failed to log entry")
@@ -143,17 +160,43 @@ export const EntryForm = ({ onComplete, onCancel }) => {
                         </div>
                     </div>
 
+                    {/* Parking Duration Slider */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1 transition-colors">
+                                Parking Duration
+                            </label>
+                            <span className="text-2xl font-bold font-mono text-slate-900 dark:text-white">
+                                {declaredHours || selectedRule?.base_hours || 2}
+                                <span className="text-sm font-normal text-slate-400 ml-1">hrs</span>
+                            </span>
+                        </div>
+                        <input
+                            type="range"
+                            min={1}
+                            max={12}
+                            step={1}
+                            value={declaredHours || selectedRule?.base_hours || 2}
+                            onChange={(e) => setDeclaredHours(Number(e.target.value))}
+                            className="w-full accent-brand-blue"
+                        />
+                        <div className="flex justify-between text-xs text-slate-400 font-medium px-1">
+                            <span>1h</span>
+                            <span>12h</span>
+                        </div>
+                    </div>
+
                     {/* Upfront Payment Display */}
                     <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl p-4 border border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between transition-colors">
                         <div>
                             <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-widest mb-0.5 transition-colors">Entry Fee</p>
                             <p className="text-[10px] text-emerald-600 dark:text-emerald-500 font-medium transition-colors">
-                                Covers first {selectedRule?.base_hours || 2} hours
+                                Covers {declaredHours || selectedRule?.base_hours || 2} hours
                             </p>
                         </div>
                         <div className="text-3xl font-mono font-bold text-emerald-900 dark:text-emerald-300 tracking-tight transition-colors">
                             <span className="text-lg text-emerald-600/70 dark:text-emerald-500/70 mr-1">₹</span>
-                            {selectedRule?.base_fee || '-'}
+                            {computedFee ?? '-'}
                         </div>
                     </div>
                 </div>
