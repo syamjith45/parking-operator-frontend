@@ -27,7 +27,7 @@ const LOG_ENTRY = gql`
   }
 `;
 
-export const EntryForm = ({ onComplete }) => {
+export const EntryForm = ({ onComplete, onCancel }) => {
     const { data, loading: rulesLoading } = useQuery(GET_PRICING_RULES);
     const [logEntry, { loading: submitting }] = useMutation(LOG_ENTRY);
 
@@ -91,9 +91,20 @@ export const EntryForm = ({ onComplete }) => {
 
     return (
         <div className="flex flex-col h-full max-w-2xl mx-auto">
-            <div className="mb-6 px-1">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1 tracking-tight transition-colors">New Entry</h2>
-                <p className="text-slate-500 dark:text-slate-400 font-medium text-xs transition-colors">Create a new parking session.</p>
+            <div className="mb-6 px-1 flex items-center gap-3">
+                {onCancel && (
+                    <button
+                        onClick={onCancel}
+                        className="p-2 -ml-2 rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-slate-800 transition-all duration-200 active:scale-90"
+                        aria-label="Go back"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                    </button>
+                )}
+                <div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1 tracking-tight transition-colors">New Entry</h2>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-xs transition-colors">Create a new parking session.</p>
+                </div>
             </div>
 
             <div className="space-y-8 bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-stone-100 dark:border-slate-800 shadow-bento transition-colors">

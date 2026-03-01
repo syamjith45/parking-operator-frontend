@@ -27,7 +27,7 @@ export const StatsPanel = () => {
   if (error) return <div className="p-4 text-rose-500 text-sm">Failed to load stats</div>
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-24">
       <div className="px-1">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Today's Overview</h2>
       </div>
