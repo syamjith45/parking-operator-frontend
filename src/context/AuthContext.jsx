@@ -3,7 +3,7 @@ import { useApolloClient } from '@apollo/client/react';
 import { supabase } from '../lib/supabase';
 
 // 🔧 DEV BYPASS: Set to false to re-enable real authentication
-const DEV_BYPASS = false;
+const DEV_BYPASS = true;
 
 const AuthContext = createContext(null);
 
