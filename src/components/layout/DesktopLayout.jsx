@@ -103,6 +103,9 @@ export const DesktopLayout = ({ children, activeTab, onTabChange }) => {
                             <div className="h-2 w-2 rounded-full bg-brand-blue animate-pulse"></div>
                             <span className="text-xs font-medium text-brand-blue">System Online</span>
                         </div>
+                        <button onClick={() => onTabChange('settings')} className="p-2 text-slate-400 hover:text-white transition-colors">
+                            <Settings className="h-5 w-5" />
+                        </button>
                         <button className="p-2 text-slate-400 hover:text-white transition-colors">
                             <Bell className="h-5 w-5" />
                         </button>

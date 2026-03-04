@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Bike, Car, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Bike, Car, ArrowLeft, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { gql } from '@apollo/client';
 import { useQuery, useMutation } from '@apollo/client/react';

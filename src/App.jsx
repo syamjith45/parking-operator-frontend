@@ -4,6 +4,7 @@ import { EntryForm } from "./components/dashboard/EntryForm"
 import { LiveMonitor } from "./components/dashboard/LiveMonitor"
 import { StatsPanel } from "./components/dashboard/StatsPanel"
 import { HistoryPanel } from "./components/dashboard/HistoryPanel"
+import { ConfigurationPanel } from "./components/dashboard/ConfigurationPanel"
 import { LoginPage } from "./components/auth/LoginPage"
 import { ProfilePanel } from "./components/dashboard/ProfilePanel"
 import { AnimatePresence, motion } from "framer-motion"
@@ -14,6 +15,7 @@ function App() {
   const { isAuthenticated, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('monitor')
   const [showEntryForm, setShowEntryForm] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -23,9 +25,14 @@ function App() {
   const handleTabChange = (tab) => {
     if (tab === 'add') {
       setShowEntryForm(true)
+      setShowSettings(false)
+    } else if (tab === 'settings') {
+      setShowSettings(true)
+      setShowEntryForm(false)
     } else {
       setActiveTab(tab)
       setShowEntryForm(false)
+      setShowSettings(false)
     }
   }
 
@@ -44,6 +51,10 @@ function App() {
                     setActiveTab('monitor')
                   }}
                   onCancel={() => setShowEntryForm(false)}
+                />
+              ) : showSettings ? (
+                <ConfigurationPanel
+                  onBack={() => setShowSettings(false)}
                 />
               ) : (
                 <MobileLayout activeTab={activeTab} onTabChange={handleTabChange} onLogout={handleLogout}>

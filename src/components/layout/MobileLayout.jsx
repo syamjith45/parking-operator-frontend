@@ -41,7 +41,7 @@ export const MobileLayout = ({ children, activeTab, onTabChange, onLogout }) => 
                         {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                     </button>
                     <button
-                        onClick={() => setIsSettingsOpen(true)}
+                        onClick={() => onTabChange('settings')}
                         className="p-2.5 rounded-full hover:bg-stone-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all duration-300 active:scale-95 relative group"
                     >
                         <Settings className="h-5 w-5 group-hover:rotate-90 transition-transform duration-500" />
