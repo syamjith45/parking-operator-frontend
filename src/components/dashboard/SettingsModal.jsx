@@ -24,8 +24,17 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     }
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Rate Configuration">
-            <div className="space-y-6">
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Rate Configuration"
+            footer={
+                <Button onClick={handleSave} className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition-colors">
+                    <Save className="h-4 w-4 mr-2" /> Save Configuration
+                </Button>
+            }
+        >
+            <div className="space-y-5">
                 <p className="text-sm text-slate-500">Configure base and hourly parking charges.</p>
 
                 {/* 2W Settings */}
@@ -96,14 +105,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-stone-100 dark:border-slate-800 transition-colors">
-                    <Button onClick={handleSave} className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition-colors">
-                        <Save className="h-4 w-4 mr-2" /> Save Configuration
-                    </Button>
-                </div>
-
-                <div className="pt-2">
-                    <p className="text-xs font-bold text-rose-500 uppercase tracking-widest mb-2">Danger Zone</p>
+                <div className="pt-4">
+                    <p className="text-xs font-bold text-rose-500 uppercase tracking-widest mb-3">Danger Zone</p>
                     <Button
                         onClick={() => {
                             if (window.confirm('Are you sure you want to clear all history? This cannot be undone.')) {
