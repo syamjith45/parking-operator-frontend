@@ -90,8 +90,8 @@ export const EntryForm = ({ onComplete, onCancel }) => {
     if (rulesLoading) return <div className="p-8 text-center text-slate-500">Loading rates...</div>
 
     return (
-        <div className="flex flex-col h-full max-w-2xl mx-auto">
-            <div className="mb-6 px-1 flex items-center gap-3">
+        <div className="flex flex-col w-full h-full overflow-y-auto p-4 max-w-2xl mx-auto scrollbar-hide">
+            <div className="mb-6 px-1 mt-2 flex items-center gap-3">
                 {onCancel && (
                     <button
                         onClick={onCancel}

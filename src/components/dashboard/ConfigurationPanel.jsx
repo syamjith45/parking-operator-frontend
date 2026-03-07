@@ -30,15 +30,15 @@ const UPDATE_PRICING_RULES = gql`
 
 // Assuming a generalized input layout
 const FormInput = ({ label, value, onChange, prefix, type = "number" }) => (
-    <div className="space-y-2 flex-1">
-        <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">{label}</label>
+    <div className="space-y-2 flex-1 min-w-0">
+        <label className="text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1 block truncate">{label}</label>
         <div className="flex items-center bg-white dark:bg-slate-950 border border-stone-200 dark:border-slate-800 rounded-2xl overflow-hidden focus-within:border-brand-blue focus-within:ring-1 focus-within:ring-brand-blue transition-all">
-            {prefix && <span className="pl-4 pr-2 py-3 text-slate-400 dark:text-slate-500 font-mono font-bold bg-stone-50 dark:bg-slate-900 border-r border-stone-100 dark:border-slate-800">{prefix}</span>}
+            {prefix && <span className="pl-3 pr-2 py-3 text-slate-400 dark:text-slate-500 font-mono font-bold bg-stone-50 dark:bg-slate-900 border-r border-stone-100 dark:border-slate-800 flex-shrink-0">{prefix}</span>}
             <input
                 type={type}
                 value={value}
                 onChange={onChange}
-                className="w-full bg-transparent px-3 py-3 text-lg font-mono font-bold text-slate-900 dark:text-white placeholder:text-stone-200 dark:placeholder:text-slate-700 focus:outline-none"
+                className="w-full min-w-0 bg-transparent px-2 py-3 text-base md:text-lg font-mono font-bold text-slate-900 dark:text-white placeholder:text-stone-200 dark:placeholder:text-slate-700 focus:outline-none"
             />
         </div>
     </div>
@@ -119,8 +119,8 @@ export const ConfigurationPanel = ({ onBack }) => {
     if (rulesLoading) return <div className="p-8 text-center text-slate-500">Loading Configuration...</div>
 
     return (
-        <div className="flex flex-col h-full max-w-2xl mx-auto pb-8 relative">
-            <div className="mb-6 px-1 flex items-center gap-3">
+        <div className="flex flex-col w-full h-full overflow-y-auto p-4 max-w-2xl mx-auto pb-8 relative scrollbar-hide">
+            <div className="mb-6 px-1 mt-2 flex items-center gap-3">
                 {onBack && (
                     <button
                         onClick={onBack}
@@ -145,7 +145,7 @@ export const ConfigurationPanel = ({ onBack }) => {
                     </div>
 
                     <div className="space-y-4">
-                        <div className="flex gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <FormInput
                                 label="Base Charge"
                                 prefix="₹"
@@ -176,7 +176,7 @@ export const ConfigurationPanel = ({ onBack }) => {
                     </div>
 
                     <div className="space-y-4">
-                        <div className="flex gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <FormInput
                                 label="Base Charge"
                                 prefix="₹"
